@@ -1,0 +1,18 @@
+'use strict';
+const assert = require('node:assert/strict');
+const {parse,compare,csv} = require('./core.js');
+assert.deepEqual(parse('\uFEFF编号,备注\r\n001,"逗号,引号""与\n换行"\r\n').rows,[['001','逗号,引号"与\n换行']]);
+assert.throws(()=>parse('id,x\n1,"broken'),/引号/);
+assert.throws(()=>parse('id,id\n1,2'),/表头/);
+assert.throws(()=>parse('id,x\n1,2,3'),/列数/);
+const a=parse('订单,金额\n001,100\n002,200\n003,300'),b=parse('id,total\n001,100\n002,190\n004,400');
+const result=compare(a,b,'订单','id','金额','total',true);
+assert.deepEqual(result.map(r=>r.status),['一致','字段不同','仅 A 存在','仅 B 存在']);
+assert.equal(result[0].id,'001');
+assert.throws(()=>compare(parse('id,x\n1,a\n1,b'),b,'id','id','x','total',true),/重复/);
+assert.throws(()=>compare(parse('id,x\n,a'),b,'id','id','x','total',true),/空订单/);
+assert.equal(compare(parse('id,x\n1, 100 '),parse('id,x\n1,100'),'id','id','x','x',true)[0].status,'一致');
+assert.equal(compare(parse('id,x\n1,100.00'),parse('id,x\n1,100'),'id','id','x','x',true)[0].status,'字段不同');
+const exported=parse(csv([{id:'=1+1',a:' +SUM(1)',b:'"<script>"',status:'字段不同'}]));
+assert.equal(exported.rows[0][0],"'=1+1");assert.equal(exported.rows[0][1],"' +SUM(1)");assert.equal(exported.rows[0][2],'"<script>"');
+console.log('PASS: quoted CSV, invalid input, four result types, duplicate/empty keys, whitespace, exact text, protected export');

@@ -1,0 +1,10 @@
+'use strict';
+const fs = require('node:fs');
+const path = require('node:path');
+const {parse, compare, csv} = require('./core.js');
+const a = parse('订单号,金额\nA001,100.00\nA002,200.00\nA003,300.00');
+const b = parse('订单编号,实收\nA001,100.00\nA002,190.00\nA004,400.00');
+const records = compare(a,b,'订单号','订单编号','金额','实收',true);
+fs.writeFileSync(path.join(__dirname,'演示差异.csv'),csv(records.filter(r=>r.status!=='一致')),'utf8');
+console.table(records);
+console.log('已生成演示差异.csv；全部记录来自自造演示数据。');
